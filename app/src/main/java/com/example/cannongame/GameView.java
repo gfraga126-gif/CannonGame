@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.RectF;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.view.MotionEvent;
@@ -22,6 +23,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private SoundPool soundPool;
     private int cannonFireSound;
     private int targetHitSound;
+    private int blockerHitSound;
 
     // =========================
     // CANHÃO
@@ -30,7 +32,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private float cannonX;
     private float cannonY;
 
-    // Mira
     private float aimX;
     private float aimY;
 
@@ -43,6 +44,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private float bulletSpeedX;
     private float bulletSpeedY;
 
+    private final float bulletRadius = 12;
+
     private boolean bulletActive = false;
 
     // =========================
@@ -52,6 +55,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private float targetX = 700;
     private float targetY = 250;
     private float targetRadius = 50;
+
+    // =========================
+    // BLOCKER / OBSTÁCULO
+    // =========================
+
+    private float blockerX = 100;
+    private float blockerY = 500;
+
+    private float blockerWidth = 180;
+    private float blockerHeight = 45;
+
+    private float blockerSpeed = 5;
 
     // =========================
     // PONTUAÇÃO
@@ -91,7 +106,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                         .setAudioAttributes(audioAttributes)
                         .build();
 
-        // Som do disparo
+        // Som do canhão
         cannonFireSound =
                 soundPool.load(
                         context,
@@ -99,11 +114,19 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                         1
                 );
 
-        // Som quando acertar o alvo
+        // Som do alvo
         targetHitSound =
                 soundPool.load(
                         context,
                         R.raw.target_hit,
+                        1
+                );
+
+        // Som do blocker
+        blockerHitSound =
+                soundPool.load(
+                        context,
+                        R.raw.blocker_hit,
                         1
                 );
 
@@ -161,21 +184,97 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private void update() {
 
-        cannonX = getWidth() / 2f;
+        if (getWidth() <= 0 || getHeight() <= 0) {
+            return;
+        }
 
+        // Posição do canhão
+        cannonX = getWidth() / 2f;
         cannonY = getHeight() - 100;
 
 
+        // =========================
+        // MOVIMENTO DO BLOCKER
+        // =========================
+
+        blockerX += blockerSpeed;
+
+        // Bateu na direita
+        if (blockerX + blockerWidth >= getWidth()) {
+
+            blockerX = getWidth() - blockerWidth;
+
+            blockerSpeed =
+                    -Math.abs(blockerSpeed);
+        }
+
+        // Bateu na esquerda
+        if (blockerX <= 0) {
+
+            blockerX = 0;
+
+            blockerSpeed =
+                    Math.abs(blockerSpeed);
+        }
+
+
+        // =========================
+        // MOVIMENTO DO TIRO
+        // =========================
+
         if (bulletActive) {
 
-            // Move o tiro
             bulletX += bulletSpeedX;
-
             bulletY += bulletSpeedY;
 
 
             // =========================
-            // COLISÃO COM O ALVO
+            // COLISÃO COM BLOCKER
+            // =========================
+
+            RectF blockerRect =
+                    new RectF(
+                            blockerX,
+                            blockerY,
+                            blockerX + blockerWidth,
+                            blockerY + blockerHeight
+                    );
+
+            RectF bulletRect =
+                    new RectF(
+                            bulletX - bulletRadius,
+                            bulletY - bulletRadius,
+                            bulletX + bulletRadius,
+                            bulletY + bulletRadius
+                    );
+
+
+            if (RectF.intersects(
+                    blockerRect,
+                    bulletRect)) {
+
+                // Destrói o tiro
+                bulletActive = false;
+
+                // Som do blocker
+                if (soundPool != null) {
+
+                    soundPool.play(
+                            blockerHitSound,
+                            1.0f,
+                            1.0f,
+                            1,
+                            0,
+                            1.0f
+                    );
+                }
+
+                return;
+            }
+
+
+            // =========================
+            // COLISÃO COM ALVO
             // =========================
 
             float dx =
@@ -190,18 +289,15 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                     );
 
 
-            if (distance < targetRadius) {
+            if (distance <
+                    targetRadius + bulletRadius) {
 
                 bulletActive = false;
 
-                // Aumenta pontuação
                 score++;
 
 
-                // =========================
-                // SOM DO ACERTO
-                // =========================
-
+                // Som do acerto
                 if (soundPool != null) {
 
                     soundPool.play(
@@ -216,18 +312,30 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 
                 // =========================
-                // NOVA POSIÇÃO DO ALVO
+                // NOVO LOCAL DO ALVO
                 // =========================
 
-                targetX =
-                        100 +
-                                (float) Math.random()
-                                        * (getWidth() - 200);
+                float margin =
+                        targetRadius + 20;
+
+                float availableWidth =
+                        getWidth() -
+                                (margin * 2);
+
+                if (availableWidth > 0) {
+
+                    targetX =
+                            margin +
+                                    (float) Math.random()
+                                            * availableWidth;
+                }
 
                 targetY =
-                        100 +
+                        120 +
                                 (float) Math.random()
-                                        * 300;
+                                        * 250;
+
+                return;
             }
 
 
@@ -235,10 +343,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             // TIRO SAIU DA TELA
             // =========================
 
-            if (bulletX < 0 ||
-                    bulletX > getWidth() ||
-                    bulletY < 0 ||
-                    bulletY > getHeight()) {
+            if (bulletX < -bulletRadius ||
+                    bulletX >
+                            getWidth() + bulletRadius ||
+                    bulletY < -bulletRadius ||
+                    bulletY >
+                            getHeight() + bulletRadius) {
 
                 bulletActive = false;
             }
@@ -298,13 +408,34 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 paint
         );
 
-
-        // Centro branco
         paint.setColor(Color.WHITE);
 
         canvas.drawCircle(
                 targetX,
                 targetY,
+                15,
+                paint
+        );
+
+
+        // =========================
+        // BLOCKER
+        // =========================
+
+        paint.setColor(
+                Color.rgb(
+                        255,
+                        140,
+                        0
+                )
+        );
+
+        canvas.drawRoundRect(
+                blockerX,
+                blockerY,
+                blockerX + blockerWidth,
+                blockerY + blockerHeight,
+                15,
                 15,
                 paint
         );
@@ -336,7 +467,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             canvas.drawCircle(
                     bulletX,
                     bulletY,
-                    12,
+                    bulletRadius,
                     paint
             );
         }
@@ -344,11 +475,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 
     // ==================================================
-    // TOQUE NA TELA
+    // TOQUE
     // ==================================================
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
+    public boolean onTouchEvent(
+            MotionEvent event) {
 
         if (event.getAction()
                 == MotionEvent.ACTION_DOWN) {
@@ -372,20 +504,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private void shoot() {
 
-        // Só permite um tiro por vez
+        // Apenas um tiro por vez
         if (bulletActive) {
-
             return;
         }
 
 
-        // Tiro começa no canhão
         bulletX = cannonX;
 
         bulletY = cannonY;
 
 
-        // Direção do toque
         float dx =
                 aimX - cannonX;
 
@@ -400,12 +529,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 
         if (distance == 0) {
-
             distance = 1;
         }
 
 
-        // Velocidade
+        // Velocidade do tiro
         bulletSpeedX =
                 (dx / distance) * 20;
 
@@ -435,7 +563,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 
     // ==================================================
-    // PAUSAR JOGO
+    // PAUSAR
     // ==================================================
 
     public void pause() {
@@ -450,14 +578,15 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
             } catch (InterruptedException e) {
 
-                Thread.currentThread().interrupt();
+                Thread.currentThread()
+                        .interrupt();
             }
         }
     }
 
 
     // ==================================================
-    // RETOMAR JOGO
+    // RETOMAR
     // ==================================================
 
     public void resume() {
@@ -478,12 +607,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
 
     // ==================================================
-    // THREAD / GAME LOOP
+    // GAME LOOP
     // ==================================================
 
-    private class GameThread extends Thread {
+    private class GameThread
+            extends Thread {
 
-        private final SurfaceHolder surfaceHolder;
+        private final SurfaceHolder
+                surfaceHolder;
 
         private boolean running;
 
@@ -514,17 +645,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 try {
 
                     canvas =
-                            surfaceHolder.lockCanvas();
+                            surfaceHolder
+                                    .lockCanvas();
 
 
                     if (canvas != null) {
 
-                        synchronized (surfaceHolder) {
+                        synchronized (
+                                surfaceHolder) {
 
-                            // Atualiza o jogo
                             update();
 
-                            // Desenha o jogo
                             onDraw(canvas);
                         }
                     }
@@ -546,7 +677,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
                     Thread.sleep(16);
 
-                } catch (InterruptedException e) {
+                } catch (
+                        InterruptedException e) {
 
                     Thread.currentThread()
                             .interrupt();
