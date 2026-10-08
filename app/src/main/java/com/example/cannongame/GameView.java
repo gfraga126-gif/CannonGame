@@ -15,6 +15,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private GameThread gameThread;
     private Paint paint;
+    // variaveis de espaço e tempo
+    private long startTime;
+    private long timeLeft;
+    private boolean isGameOver = false;
+    private final long totalGameTime = 60000;
+
+
+    // movimento senoidal do alvo
+
+    private float targetBaseY = 250; // Eixo Y central da onda
+    private float targetAngle = 0f;  // Ângulo para a função seno
+    private float targetSpeedX = 4f; // Velocidade horizontal do alvo
 
     // =========================
     // SONS
@@ -141,6 +153,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
 
+        startTime = System.currentTimeMillis();
+
         gameThread = new GameThread(holder);
 
         gameThread.setRunning(true);
@@ -184,6 +198,17 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private void update() {
 
+        if (isGameOver) return; // Interrompe a lógica se o jogo acabou
+
+        timeLeft = totalGameTime - (System.currentTimeMillis() - startTime);
+        if (timeLeft <= 0) {
+            timeLeft = 0;
+            isGameOver = true;
+            return;
+        }
+
+        if (getWidth() <= 0 || getHeight() <= 0) return;
+
         if (getWidth() <= 0 || getHeight() <= 0) {
             return;
         }
@@ -192,114 +217,126 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         cannonX = getWidth() / 2f;
         cannonY = getHeight() - 100;
 
+        // =========================
+        // MOVIMENTAÇÃO SENOIDAL DO ALVO
+        // =========================
+                targetX += targetSpeedX;
+                targetAngle += 0.08f;
+        // O alvo sobe e desce 60 pixels em relação à sua base
+                targetY = targetBaseY + (float) Math.sin(targetAngle) * 60f;
+
+        // Rebate nas bordas laterais da tela
+                if (targetX + targetRadius >= getWidth()) {
+                    targetX = getWidth() - targetRadius;
+                    targetSpeedX = -Math.abs(targetSpeedX);
+                } else if (targetX - targetRadius <= 0) {
+                    targetX = targetRadius;
+                    targetSpeedX = Math.abs(targetSpeedX);
+                }
+
 
         // =========================
         // MOVIMENTO DO BLOCKER
         // =========================
 
-        blockerX += blockerSpeed;
-
-        // Bateu na direita
-        if (blockerX + blockerWidth >= getWidth()) {
-
-            blockerX = getWidth() - blockerWidth;
-
-            blockerSpeed =
-                    -Math.abs(blockerSpeed);
-        }
-
-        // Bateu na esquerda
-        if (blockerX <= 0) {
-
-            blockerX = 0;
-
-            blockerSpeed =
-                    Math.abs(blockerSpeed);
-        }
-
-
-        // =========================
-        // MOVIMENTO DO TIRO
-        // =========================
-
         if (bulletActive) {
+            blockerX += blockerSpeed;
 
-            bulletX += bulletSpeedX;
-            bulletY += bulletSpeedY;
+            // Bateu na direita
+            if (blockerX + blockerWidth >= getWidth()) {
+                blockerX = getWidth() - blockerWidth;
+                blockerSpeed = -Math.abs(blockerSpeed);
+            }
 
-
-            // =========================
-            // COLISÃO COM BLOCKER
-            // =========================
-
-            RectF blockerRect =
-                    new RectF(
-                            blockerX,
-                            blockerY,
-                            blockerX + blockerWidth,
-                            blockerY + blockerHeight
-                    );
-
-            RectF bulletRect =
-                    new RectF(
-                            bulletX - bulletRadius,
-                            bulletY - bulletRadius,
-                            bulletX + bulletRadius,
-                            bulletY + bulletRadius
-                    );
-
-
-            if (RectF.intersects(
-                    blockerRect,
-                    bulletRect)) {
-
-                // Destrói o tiro
-                bulletActive = false;
-
-                // Som do blocker
-                if (soundPool != null) {
-
-                    soundPool.play(
-                            blockerHitSound,
-                            1.0f,
-                            1.0f,
-                            1,
-                            0,
-                            1.0f
-                    );
-                }
-
-                return;
+            // Bateu na esquerda
+            if (blockerX <= 0) {
+                blockerX = 0;
+                blockerSpeed = Math.abs(blockerSpeed);
             }
 
 
+
             // =========================
-            // COLISÃO COM ALVO
+            // MOVIMENTO DO TIRO
             // =========================
 
-            float dx =
-                    bulletX - targetX;
-
-            float dy =
-                    bulletY - targetY;
-
-            float distance =
-                    (float) Math.sqrt(
-                            dx * dx + dy * dy
-                    );
+            if (bulletActive) {
+                bulletX += bulletSpeedX;
+                bulletY += bulletSpeedY;
 
 
-            if (distance <
-                    targetRadius + bulletRadius) {
+                // =========================
+                // COLISÃO COM BLOCKER
+                // =========================
 
+
+                RectF blockerRect =
+                        new RectF(
+                                blockerX,
+                                blockerY,
+                                blockerX + blockerWidth,
+                                blockerY + blockerHeight
+                        );
+
+                RectF bulletRect =
+                        new RectF(
+                                bulletX - bulletRadius,
+                                bulletY - bulletRadius,
+                                bulletX + bulletRadius,
+                                bulletY + bulletRadius
+                        );
+
+
+                if (RectF.intersects(
+                        blockerRect,
+                        bulletRect)) {
+
+                    // Destrói o tiro
+                    bulletActive = false;
+
+                    // Som do blocker
+                    if (soundPool != null) {
+
+                        soundPool.play(
+                                blockerHitSound,
+                                1.0f,
+                                1.0f,
+                                1,
+                                0,
+                                1.0f
+                        );
+                    }
+
+                    return;
+                }
+            }
+
+
+            float dx = bulletX - targetX;
+            float dy = bulletY - targetY;
+            float distance = (float) Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < targetRadius + bulletRadius) {
+
+                // Desativa o tiro e aumenta a pontuação
                 bulletActive = false;
-
                 score++;
 
+                // =========================
+                // DIFICULDADE PROGRESSIVA (NOVO)
+                // =========================
+                // Aumenta a velocidade do blocker (mantendo a direção atual)
+                blockerSpeed += (blockerSpeed > 0) ? 0.8f : -0.8f;
 
-                // Som do acerto
+                // Diminui o tamanho do alvo até um limite mínimo de 20
+                if (targetRadius > 20) {
+                    targetRadius -= 2;
+                }
+
+                // =========================
+                // SOM DO ACERTO
+                // =========================
                 if (soundPool != null) {
-
                     soundPool.play(
                             targetHitSound,
                             1.0f,
@@ -310,30 +347,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                     );
                 }
 
-
                 // =========================
                 // NOVO LOCAL DO ALVO
                 // =========================
-
-                float margin =
-                        targetRadius + 20;
-
-                float availableWidth =
-                        getWidth() -
-                                (margin * 2);
+                float margin = targetRadius + 20;
+                float availableWidth = getWidth() - (margin * 2);
 
                 if (availableWidth > 0) {
-
-                    targetX =
-                            margin +
-                                    (float) Math.random()
-                                            * availableWidth;
+                    targetX = margin + (float) Math.random() * availableWidth;
                 }
 
-                targetY =
-                        120 +
-                                (float) Math.random()
-                                        * 250;
+                targetBaseY = 120 + (float) Math.random() * 250;
+                targetSpeedX += (targetSpeedX > 0) ? 0.5f : -0.5f; // Dificuldade: alvo mais rápido
 
                 return;
             }
@@ -382,6 +407,30 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         // =========================
         // PONTUAÇÃO
         // =========================
+
+        // Fundo existente...
+        canvas.drawColor(Color.rgb(25, 35, 50));
+
+        // HUD de Pontuação e Tempo
+        paint.setColor(Color.WHITE);
+        paint.setTextSize(45);
+        canvas.drawText("Pontos: " + score, 30, 60, paint);
+        canvas.drawText("Tempo: " + (timeLeft / 1000) + "s", getWidth() - 300, 60, paint);
+
+        if (isGameOver) {
+            paint.setTextSize(80);
+            paint.setTextAlign(Paint.Align.CENTER);
+            canvas.drawText("GAME OVER", getWidth() / 2f, getHeight() / 2f - 50, paint);
+
+            paint.setTextSize(50);
+            canvas.drawText("Pontuação final: " + score, getWidth() / 2f, getHeight() / 2f + 30, paint);
+
+            paint.setTextSize(40);
+            canvas.drawText("Toque para jogar novamente", getWidth() / 2f, getHeight() / 2f + 100, paint);
+
+            paint.setTextAlign(Paint.Align.LEFT); // Reseta o alinhamento
+            return; // Interrompe o desenho para ocultar os elementos do jogo
+        }
 
         paint.setColor(Color.WHITE);
 
@@ -479,21 +528,25 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     // ==================================================
 
     @Override
-    public boolean onTouchEvent(
-            MotionEvent event) {
-
-        if (event.getAction()
-                == MotionEvent.ACTION_DOWN) {
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            if (isGameOver) {
+                // Restaura o estado inicial da partida
+                targetSpeedX = 4f;
+                targetBaseY = 250;
+                score = 0;
+                targetRadius = 50;
+                blockerSpeed = 5;
+                startTime = System.currentTimeMillis();
+                isGameOver = false;
+                return true;
+            }
 
             aimX = event.getX();
-
             aimY = event.getY();
-
             shoot();
-
             return true;
         }
-
         return true;
     }
 
