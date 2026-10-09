@@ -57,6 +57,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     // =========================
     private float bulletX;
     private float bulletY;
+
     private float bulletSpeedX;
     private float bulletSpeedY;
     private final float bulletRadius = 12;
@@ -67,22 +68,46 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     // =========================
     private float targetX = 700;
     private float targetY = 250;
-    private float targetRadius = 50;
+
+    private final float targetRadius = 50;
 
     // =========================
-    // BLOCKER / OBSTÁCULO
+    // BLOCKER
     // =========================
     private float blockerX = 100;
     private float blockerY = 500;
+<<<<<<< Updated upstream
     private float blockerWidth = 180;
     private float blockerHeight = 45;
+=======
+
+    private final float blockerWidth = 180;
+    private final float blockerHeight = 45;
+
+>>>>>>> Stashed changes
     private float blockerSpeed = 5;
 
     // =========================
     // PONTUAÇÃO E PARTÍCULAS
     // =========================
     private int score = 0;
+<<<<<<< Updated upstream
     private List<Particle> particles = new ArrayList<>();
+=======
+
+    // =========================
+    // TEMPO / GAME OVER
+    // =========================
+
+    private static final long GAME_DURATION = 60000;
+
+    private long gameStartTime;
+
+    private long timeRemaining = GAME_DURATION;
+
+    private boolean gameOver = false;
+
+>>>>>>> Stashed changes
 
     // ==================================================
     // CONSTRUTOR
@@ -94,6 +119,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         paint = new Paint();
         paint.setAntiAlias(true);
 
+<<<<<<< Updated upstream
         AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_GAME)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
@@ -107,6 +133,43 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         cannonFireSound = soundPool.load(context, R.raw.cannon_fire, 1);
         targetHitSound = soundPool.load(context, R.raw.target_hit, 1);
         blockerHitSound = soundPool.load(context, R.raw.blocker_hit, 1);
+=======
+        // Configuração do áudio
+        AudioAttributes audioAttributes =
+                new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_GAME)
+                        .setContentType(
+                                AudioAttributes.CONTENT_TYPE_SONIFICATION
+                        )
+                        .build();
+
+        soundPool =
+                new SoundPool.Builder()
+                        .setMaxStreams(3)
+                        .setAudioAttributes(audioAttributes)
+                        .build();
+
+        cannonFireSound =
+                soundPool.load(
+                        context,
+                        R.raw.cannon_fire,
+                        1
+                );
+
+        targetHitSound =
+                soundPool.load(
+                        context,
+                        R.raw.target_hit,
+                        1
+                );
+
+        blockerHitSound =
+                soundPool.load(
+                        context,
+                        R.raw.blocker_hit,
+                        1
+                );
+>>>>>>> Stashed changes
 
         setFocusable(true);
     }
@@ -116,8 +179,18 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     // ==================================================
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
+<<<<<<< Updated upstream
         startTime = System.currentTimeMillis();
         gameThread = new GameThread(holder);
+=======
+
+        // Começa uma nova partida
+        startNewGame();
+
+        gameThread =
+                new GameThread(holder);
+
+>>>>>>> Stashed changes
         gameThread.setRunning(true);
         gameThread.start();
     }
@@ -126,6 +199,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
 
     @Override
+<<<<<<< Updated upstream
     public void surfaceDestroyed(SurfaceHolder holder) {
         if (gameThread != null) {
             gameThread.setRunning(false);
@@ -135,14 +209,60 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 Thread.currentThread().interrupt();
             }
         }
+=======
+    public void surfaceDestroyed(
+            SurfaceHolder holder) {
+
+        stopGameThread();
+>>>>>>> Stashed changes
     }
 
     // ==================================================
-    // ATUALIZAÇÃO DO JOGO
+    // NOVA PARTIDA
+    // ==================================================
+
+    private void startNewGame() {
+
+        score = 0;
+
+        bulletActive = false;
+
+        gameOver = false;
+
+        // Marca quando a partida começou
+        gameStartTime =
+                System.currentTimeMillis();
+
+        timeRemaining =
+                GAME_DURATION;
+
+        // Reinicia blocker
+        blockerX = 100;
+
+        blockerSpeed = 5;
+
+        // Reposiciona o alvo
+        if (getWidth() > 0) {
+
+            targetX =
+                    getWidth() / 2f;
+
+        } else {
+
+            targetX = 700;
+        }
+
+        targetY = 250;
+    }
+
+
+    // ==================================================
+    // UPDATE
     // ==================================================
     private void update() {
         if (isGameOver) return;
 
+<<<<<<< Updated upstream
         timeLeft = totalGameTime - (System.currentTimeMillis() - startTime);
         if (timeLeft <= 0) {
             timeLeft = 0;
@@ -155,6 +275,20 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         // Posição do canhão
         cannonX = getWidth() / 2f;
         cannonY = getHeight() - 100;
+=======
+        if (getWidth() <= 0 ||
+                getHeight() <= 0) {
+
+            return;
+        }
+
+
+        cannonX =
+                getWidth() / 2f;
+
+        cannonY =
+                getHeight() - 100;
+>>>>>>> Stashed changes
 
         // =========================
         // ATUALIZAÇÃO DAS PARTÍCULAS
@@ -184,27 +318,102 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
 
         // =========================
-        // MOVIMENTO DO BLOCKER
+        // CRONÔMETRO
+        // =========================
+
+        if (!gameOver) {
+
+            long elapsed =
+                    System.currentTimeMillis()
+                            - gameStartTime;
+
+            timeRemaining =
+                    GAME_DURATION - elapsed;
+
+
+            if (timeRemaining <= 0) {
+
+                timeRemaining = 0;
+
+                gameOver = true;
+
+                bulletActive = false;
+
+                return;
+            }
+        }
+
+
+        // Quando acaba, tudo para
+        if (gameOver) {
+
+            return;
+        }
+
+
+        // =========================
+        // BLOCKER
         // =========================
         blockerX += blockerSpeed;
+<<<<<<< Updated upstream
         if (blockerX + blockerWidth >= getWidth()) {
             blockerX = getWidth() - blockerWidth;
             blockerSpeed = -Math.abs(blockerSpeed);
         } else if (blockerX <= 0) {
             blockerX = 0;
             blockerSpeed = Math.abs(blockerSpeed);
+=======
+
+
+        if (blockerX + blockerWidth
+                >= getWidth()) {
+
+            blockerX =
+                    getWidth()
+                            - blockerWidth;
+
+            blockerSpeed =
+                    -Math.abs(
+                            blockerSpeed
+                    );
+        }
+
+
+        if (blockerX <= 0) {
+
+            blockerX = 0;
+
+            blockerSpeed =
+                    Math.abs(
+                            blockerSpeed
+                    );
+>>>>>>> Stashed changes
         }
 
         // =========================
+<<<<<<< Updated upstream
         // MOVIMENTO DO TIRO E COLISÕES
+=======
+        // TIRO
+>>>>>>> Stashed changes
         // =========================
         if (bulletActive) {
+<<<<<<< Updated upstream
             bulletX += bulletSpeedX;
             bulletY += bulletSpeedY;
+=======
+
+            bulletX +=
+                    bulletSpeedX;
+
+            bulletY +=
+                    bulletSpeedY;
+>>>>>>> Stashed changes
 
             RectF blockerRect = new RectF(blockerX, blockerY, blockerX + blockerWidth, blockerY + blockerHeight);
             RectF bulletRect = new RectF(bulletX - bulletRadius, bulletY - bulletRadius, bulletX + bulletRadius, bulletY + bulletRadius);
 
+<<<<<<< Updated upstream
             // COLISÃO COM BLOCKER
             if (RectF.intersects(blockerRect, bulletRect)) {
                 bulletActive = false;
@@ -218,11 +427,79 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             float dx = bulletX - targetX;
             float dy = bulletY - targetY;
             float distance = (float) Math.sqrt(dx * dx + dy * dy);
+=======
+            // =========================
+            // BLOCKER x TIRO
+            // =========================
+
+            RectF blockerRect =
+                    new RectF(
+                            blockerX,
+                            blockerY,
+                            blockerX
+                                    + blockerWidth,
+                            blockerY
+                                    + blockerHeight
+                    );
+
+
+            RectF bulletRect =
+                    new RectF(
+                            bulletX
+                                    - bulletRadius,
+                            bulletY
+                                    - bulletRadius,
+                            bulletX
+                                    + bulletRadius,
+                            bulletY
+                                    + bulletRadius
+                    );
+
+
+            if (RectF.intersects(
+                    blockerRect,
+                    bulletRect)) {
+
+                bulletActive = false;
+
+                playSound(
+                        blockerHitSound
+                );
+
+                return;
+            }
+
+
+            // =========================
+            // ALVO x TIRO
+            // =========================
+
+            float dx =
+                    bulletX
+                            - targetX;
+
+            float dy =
+                    bulletY
+                            - targetY;
+
+
+            float distance =
+                    (float) Math.sqrt(
+                            dx * dx
+                                    + dy * dy
+                    );
+
+
+            if (distance <
+                    targetRadius
+                            + bulletRadius) {
+>>>>>>> Stashed changes
 
             if (distance < targetRadius + bulletRadius) {
                 bulletActive = false;
                 score++;
 
+<<<<<<< Updated upstream
                 // Gera explosão de partículas
                 for (int i = 0; i < 20; i++) {
                     particles.add(new Particle(targetX, targetY));
@@ -243,29 +520,132 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 }
                 targetBaseY = 120 + (float) Math.random() * 250;
                 targetSpeedX += (targetSpeedX > 0) ? 0.5f : -0.5f;
+=======
+                playSound(
+                        targetHitSound
+                );
+
+                moveTarget();
+>>>>>>> Stashed changes
 
                 return;
             }
 
+<<<<<<< Updated upstream
             // TIRO SAIU DA TELA
             if (bulletX < -bulletRadius || bulletX > getWidth() + bulletRadius || bulletY < -bulletRadius || bulletY > getHeight() + bulletRadius) {
+=======
+
+            // =========================
+            // FORA DA TELA
+            // =========================
+
+            if (bulletX <
+                    -bulletRadius ||
+
+                    bulletX >
+                            getWidth()
+                                    + bulletRadius ||
+
+                    bulletY <
+                            -bulletRadius ||
+
+                    bulletY >
+                            getHeight()
+                                    + bulletRadius) {
+
+>>>>>>> Stashed changes
                 bulletActive = false;
             }
         }
     }
 
     // ==================================================
-    // DESENHO DO JOGO
+    // NOVA POSIÇÃO DO ALVO
+    // ==================================================
+
+    private void moveTarget() {
+
+        float margin =
+                targetRadius + 20;
+
+        float availableWidth =
+                getWidth()
+                        - margin * 2;
+
+
+        if (availableWidth > 0) {
+
+            targetX =
+                    margin
+                            + (float)
+                            Math.random()
+                            * availableWidth;
+        }
+
+
+        // Mantém o alvo acima do blocker
+        float maximumTargetY =
+                blockerY
+                        - targetRadius
+                        - 80;
+
+
+        if (maximumTargetY > 150) {
+
+            targetY =
+                    120
+                            + (float)
+                            Math.random()
+                            * (maximumTargetY
+                            - 120);
+
+        } else {
+
+            targetY = 200;
+        }
+    }
+
+
+    // ==================================================
+    // DESENHO
     // ==================================================
     @Override
+<<<<<<< Updated upstream
     protected void onDraw(Canvas canvas) {
+=======
+    protected void onDraw(
+            Canvas canvas) {
+
+>>>>>>> Stashed changes
         super.onDraw(canvas);
 
         // Fundo
         canvas.drawColor(Color.rgb(25, 35, 50));
 
+<<<<<<< Updated upstream
         // HUD
         paint.setColor(Color.WHITE);
+=======
+        // Fundo
+        canvas.drawColor(
+                Color.rgb(
+                        25,
+                        35,
+                        50
+                )
+        );
+
+
+        // =========================
+        // PONTOS
+        // =========================
+
+        paint.setColor(
+                Color.WHITE
+        );
+
+>>>>>>> Stashed changes
         paint.setTextSize(45);
         canvas.drawText("Pontos: " + score, 30, 60, paint);
         canvas.drawText("Tempo: " + (timeLeft / 1000) + "s", getWidth() - 300, 60, paint);
@@ -290,11 +670,66 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
         }
         paint.setAlpha(255); // Reseta a transparência para os próximos elementos
 
+<<<<<<< Updated upstream
         // Alvo
         paint.setColor(Color.RED);
         canvas.drawCircle(targetX, targetY, targetRadius, paint);
         paint.setColor(Color.WHITE);
         canvas.drawCircle(targetX, targetY, 15, paint);
+=======
+        // =========================
+        // TEMPO
+        // =========================
+
+        long seconds =
+                (timeRemaining + 999)
+                        / 1000;
+
+
+        String timeText =
+                "Tempo: "
+                        + seconds
+                        + "s";
+
+
+        paint.setTextSize(40);
+
+        float timeWidth =
+                paint.measureText(
+                        timeText
+                );
+
+
+        canvas.drawText(
+                timeText,
+                getWidth()
+                        - timeWidth
+                        - 30,
+                60,
+                paint
+        );
+
+
+        // =========================
+        // ALVO
+        // =========================
+
+        paint.setColor(
+                Color.RED
+        );
+
+        canvas.drawCircle(
+                targetX,
+                targetY,
+                targetRadius,
+                paint
+        );
+
+
+        paint.setColor(
+                Color.WHITE
+        );
+>>>>>>> Stashed changes
 
         // Blocker
         paint.setColor(Color.rgb(255, 140, 0));
@@ -308,21 +743,200 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             paint.setStrokeWidth(0);
         }
 
+<<<<<<< Updated upstream
         // Canhão
         paint.setColor(Color.DKGRAY);
         canvas.drawRect(cannonX - 35, cannonY - 20, cannonX + 35, cannonY + 30, paint);
+=======
+        // =========================
+        // BLOCKER
+        // =========================
+
+        paint.setColor(
+                Color.rgb(
+                        255,
+                        140,
+                        0
+                )
+        );
+
+
+        canvas.drawRoundRect(
+                blockerX,
+                blockerY,
+                blockerX
+                        + blockerWidth,
+                blockerY
+                        + blockerHeight,
+                15,
+                15,
+                paint
+        );
+
+
+        // =========================
+        // CANHÃO
+        // =========================
+
+        paint.setColor(
+                Color.DKGRAY
+        );
+
+>>>>>>> Stashed changes
 
         // Tiro
         if (bulletActive) {
+<<<<<<< Updated upstream
             paint.setColor(Color.YELLOW);
             canvas.drawCircle(bulletX, bulletY, bulletRadius, paint);
+=======
+
+            paint.setColor(
+                    Color.YELLOW
+            );
+
+
+            canvas.drawCircle(
+                    bulletX,
+                    bulletY,
+                    bulletRadius,
+                    paint
+            );
+>>>>>>> Stashed changes
         }
+
+
+        // =========================
+        // GAME OVER
+        // =========================
+
+        if (gameOver) {
+
+            drawGameOver(
+                    canvas
+            );
+        }
+    }
+
+
+    // ==================================================
+    // TELA GAME OVER
+    // ==================================================
+
+    private void drawGameOver(
+            Canvas canvas) {
+
+        // Fundo transparente escuro
+        paint.setColor(
+                Color.argb(
+                        190,
+                        0,
+                        0,
+                        0
+                )
+        );
+
+
+        canvas.drawRect(
+                0,
+                0,
+                getWidth(),
+                getHeight(),
+                paint
+        );
+
+
+        // GAME OVER
+        paint.setColor(
+                Color.WHITE
+        );
+
+        paint.setTextSize(70);
+
+        paint.setFakeBoldText(true);
+
+
+        String gameOverText =
+                "GAME OVER";
+
+
+        float gameOverWidth =
+                paint.measureText(
+                        gameOverText
+                );
+
+
+        canvas.drawText(
+                gameOverText,
+                (getWidth()
+                        - gameOverWidth)
+                        / 2f,
+                getHeight()
+                        / 2f
+                        - 80,
+                paint
+        );
+
+
+        // Pontuação final
+        paint.setTextSize(45);
+
+
+        String scoreText =
+                "Pontuacao final: "
+                        + score;
+
+
+        float scoreWidth =
+                paint.measureText(
+                        scoreText
+                );
+
+
+        canvas.drawText(
+                scoreText,
+                (getWidth()
+                        - scoreWidth)
+                        / 2f,
+                getHeight()
+                        / 2f,
+                paint
+        );
+
+
+        // Reiniciar
+        paint.setTextSize(35);
+
+        paint.setFakeBoldText(false);
+
+
+        String restartText =
+                "Toque para jogar novamente";
+
+
+        float restartWidth =
+                paint.measureText(
+                        restartText
+                );
+
+
+        canvas.drawText(
+                restartText,
+                (getWidth()
+                        - restartWidth)
+                        / 2f,
+                getHeight()
+                        / 2f
+                        + 80,
+                paint
+        );
     }
 
     // ==================================================
     // TOQUE E SWIPE (NOVO)
     // ==================================================
     @Override
+<<<<<<< Updated upstream
     public boolean onTouchEvent(MotionEvent event) {
         if (isGameOver && event.getAction() == MotionEvent.ACTION_DOWN) {
             targetSpeedX = 4f;
@@ -351,6 +965,41 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 shoot();
                 break;
         }
+=======
+    public boolean onTouchEvent(
+            MotionEvent event) {
+
+
+        if (event.getAction()
+                == MotionEvent.ACTION_DOWN) {
+
+
+            // =========================
+            // REINICIAR
+            // =========================
+
+            if (gameOver) {
+
+                startNewGame();
+
+                return true;
+            }
+
+
+            aimX =
+                    event.getX();
+
+            aimY =
+                    event.getY();
+
+
+            shoot();
+
+            return true;
+        }
+
+
+>>>>>>> Stashed changes
         return true;
     }
 
@@ -358,16 +1007,33 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     // DISPARO
     // ==================================================
     private void shoot() {
+<<<<<<< Updated upstream
         if (bulletActive) return;
 
         bulletX = cannonX;
         bulletY = cannonY;
+=======
+
+        if (gameOver ||
+                bulletActive) {
+
+            return;
+        }
+
+
+        bulletX =
+                cannonX;
+
+        bulletY =
+                cannonY;
+>>>>>>> Stashed changes
 
         float dx = aimX - cannonX;
         float dy = aimY - cannonY;
         float distance = (float) Math.sqrt(dx * dx + dy * dy);
         if (distance == 0) distance = 1;
 
+<<<<<<< Updated upstream
         bulletSpeedX = (dx / distance) * 20;
         bulletSpeedY = (dy / distance) * 20;
         bulletActive = true;
@@ -384,27 +1050,175 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
                 gameThread.join();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+=======
+        float dx =
+                aimX
+                        - cannonX;
+
+        float dy =
+                aimY
+                        - cannonY;
+
+
+        float distance =
+                (float) Math.sqrt(
+                        dx * dx
+                                + dy * dy
+                );
+
+
+        if (distance == 0) {
+
+            distance = 1;
+        }
+
+
+        bulletSpeedX =
+                (dx / distance)
+                        * 20;
+
+        bulletSpeedY =
+                (dy / distance)
+                        * 20;
+
+
+        bulletActive = true;
+
+
+        playSound(
+                cannonFireSound
+        );
+    }
+
+
+    // ==================================================
+    // SOM
+    // ==================================================
+
+    private void playSound(
+            int soundId) {
+
+        if (soundPool != null) {
+
+            soundPool.play(
+                    soundId,
+                    1.0f,
+                    1.0f,
+                    1,
+                    0,
+                    1.0f
+            );
+        }
+    }
+
+
+    // ==================================================
+    // PAUSE
+    // ==================================================
+
+    public void pause() {
+
+        stopGameThread();
+    }
+
+
+    // ==================================================
+    // RESUME
+    // ==================================================
+
+    public void resume() {
+
+        if (getHolder()
+                .getSurface()
+                .isValid()) {
+
+            if (gameThread == null ||
+                    !gameThread.isAlive()) {
+
+                gameThread =
+                        new GameThread(
+                                getHolder()
+                        );
+
+                gameThread.setRunning(
+                        true
+                );
+
+                gameThread.start();
+>>>>>>> Stashed changes
             }
         }
     }
 
+<<<<<<< Updated upstream
     public void resume() {
         if (gameThread == null || !gameThread.isAlive()) {
             gameThread = new GameThread(getHolder());
             gameThread.setRunning(true);
             gameThread.start();
+=======
+
+    // ==================================================
+    // PARAR THREAD
+    // ==================================================
+
+    private void stopGameThread() {
+
+        if (gameThread != null) {
+
+            gameThread.setRunning(
+                    false
+            );
+
+
+            try {
+
+                gameThread.join();
+
+            } catch (
+                    InterruptedException e) {
+
+                Thread.currentThread()
+                        .interrupt();
+            }
+
+
+            gameThread = null;
+>>>>>>> Stashed changes
         }
     }
 
     // ==================================================
     // GAME LOOP E CLASSE DE PARTÍCULAS
     // ==================================================
+<<<<<<< Updated upstream
     private class GameThread extends Thread {
         private final SurfaceHolder surfaceHolder;
         private boolean running;
 
         public GameThread(SurfaceHolder surfaceHolder) {
             this.surfaceHolder = surfaceHolder;
+=======
+
+    private class GameThread
+            extends Thread {
+
+
+        private final SurfaceHolder
+                surfaceHolder;
+
+
+        private volatile boolean
+                running;
+
+
+        public GameThread(
+                SurfaceHolder
+                        surfaceHolder) {
+
+            this.surfaceHolder =
+                    surfaceHolder;
+>>>>>>> Stashed changes
         }
 
         public void setRunning(boolean running) {
@@ -413,25 +1227,64 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
         @Override
         public void run() {
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
             while (running) {
                 Canvas canvas = null;
+<<<<<<< Updated upstream
+=======
+
+
+>>>>>>> Stashed changes
                 try {
                     canvas = surfaceHolder.lockCanvas();
                     if (canvas != null) {
                         synchronized (surfaceHolder) {
                             update();
+<<<<<<< Updated upstream
                             onDraw(canvas);
                         }
                     }
                 } finally {
+=======
+
+                            onDraw(
+                                    canvas
+                            );
+                        }
+                    }
+
+
+                } finally {
+
+
+>>>>>>> Stashed changes
                     if (canvas != null) {
                         surfaceHolder.unlockCanvasAndPost(canvas);
                     }
                 }
                 try {
+<<<<<<< Updated upstream
                     Thread.sleep(16);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
+=======
+
+                    Thread.sleep(
+                            16
+                    );
+
+
+                } catch (
+                        InterruptedException e) {
+
+                    Thread.currentThread()
+                            .interrupt();
+
+>>>>>>> Stashed changes
                     return;
                 }
             }
