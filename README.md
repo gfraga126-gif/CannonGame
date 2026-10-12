@@ -21,22 +21,25 @@ Até o momento, o projeto possui:
 
 - Estrutura do projeto Android criada no Android Studio;
 - Desenvolvimento utilizando Java;
+- **Tela de Menu Principal** com exibição interativa do título e do recorde atual;
+- **Persistência de recordes (`SharedPreferences`)** para guardar a pontuação máxima (`High Score`) entre sessões;
 - GameView personalizado com SurfaceView e SurfaceHolder;
 - Game Loop utilizando Thread (atualização a aproximadamente 60 FPS);
 - Desenho de formas geométricas e elementos utilizando Canvas e Paint;
-- Canhão posicionado na parte inferior da tela;
-- *Controle de mira por deslize (swipe)* com exibição de linha de trajetória;
-- Movimento contínuo do projétil após o disparo;
+- **Canhão articulado e rotativo** desenhado por camadas no Canvas com acompanhamento dinâmico do ângulo de mira;
+- *Controle de mira por toque/swipe* com exibição de linha de trajetória;
+- Movimento contínuo do projétil após o disparo (saindo precisamente da ponta do cano);
 - *Alvo móvel com movimentação senoidal* (zigue-zague contínuo);
 - Detecção matemática de colisão entre projétil e alvo;
 - Reposicionamento automático do alvo após um acerto;
-- *Sistema de partículas* gerando uma explosão visual colorida ao acertar o alvo;
+- **Sistema de partículas aprimorado** com física de atrito, dispersão ampla e tempo de vida otimizado para explosões dinâmicas;
 - Obstáculo (blocker) com movimentação horizontal independente;
 - Detecção de colisão entre projétil e blocker;
 - *Dificuldade progressiva:* a cada acerto, o blocker fica mais rápido e o alvo diminui de tamanho;
+- **Sistema de tempo bônus:** cada acerto no alvo recompensa o jogador com segundos extras na partida;
 - Sistema de pontuação exibido no HUD;
-- *Cronômetro de partida:* contagem regressiva de 60 segundos;
-- *Tela de Game Over* com bloqueio de ações e exibição da pontuação final;
+- *Cronômetro de partida:* contagem regressiva inicial de 60 segundos;
+- *Tela de Game Over* com verificação de novo recorde, animação de destaque e bloqueio de ações;
 - Reinício completo da partida através de um toque na tela;
 - Execução de efeitos sonoros assíncronos utilizando SoundPool.
 
@@ -89,12 +92,14 @@ Quando o tempo chega a zero:
 
 - O jogo é interrompido (alvo, partículas e disparos param);
 - Novos disparos são bloqueados;
-- A tela é escurecida e mostra a mensagem *GAME OVER*;
-- A pontuação final obtida naquela rodada é destacada no centro da tela.
+- A tela exibe a mensagem *GAME OVER* e a pontuação final;
+- Se a pontuação superar o recorde anterior, um destaque animado de **NOVO RECORDE!** é exibido.
 
 Exemplo:
+
 GAME OVER
-Pontuacao final: 5
+Pontuação final: 12
+NOVO RECORDE!
 Toque para jogar novamente
 
 Ao tocar na tela, todo o estado do jogo é resetado: a pontuação volta para zero, o tamanho e a velocidade do alvo e do blocker voltam ao padrão inicial e o cronômetro retorna para 60 segundos.
@@ -119,9 +124,10 @@ O jogador começa cada partida com:
 Pontos: 0
 
 Cada alvo atingido adiciona:
-+1 ponto
++1 ponto 
++5 segundos (bônus)
 
-A pontuação é exibida durante toda a partida e também na tela de Game Over.
+A pontuação é exibida durante toda a partida e também na tela de Game Over e no menu inicial.
 
 ---
 
@@ -181,8 +187,6 @@ A base e as mecânicas avançadas do Cannon Game já estão totalmente implement
 
 ### Próximas etapas
 
-- Implementar salvamento de pontuação máxima (High Score) usando SharedPreferences;
-- Melhorar visualmente o design do canhão no Canvas;
 - Adicionar transição de cores dinâmica ao cenário (Tema Dia/Noite com base no tempo);
 - Revisar o modo imersivo/tela cheia e os estados do ciclo de vida (pausa e retomada);
 - Realizar os testes finais de estabilidade;
