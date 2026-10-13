@@ -6,6 +6,9 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.LinearGradient;
+import android.graphics.Shader;
+import java.util.Random;
 import android.media.AudioAttributes;
 import android.media.SoundPool;
 import android.view.MotionEvent;
@@ -20,6 +23,10 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private GameThread gameThread;
     private Paint paint;
+    private final Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final float[] starX = new float[130];
+    private final float[] starY = new float[130];
+    private final float[] starSize = new float[130];
 
     // =========================
     // ESTADOS DO JOGO
@@ -34,6 +41,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private long timeLeft;
     private final long totalGameTime = 60000;
     private int score = 0;
+    // Exibe a pontuacao no centro por 1,2 segundo apos acertar o alvo
+    private long pointPopupStart = 0L;
+    private static final long POINT_POPUP_DURATION = 1200L;
     private int highScore = 0;
     private SharedPreferences prefs;
 
@@ -106,6 +116,14 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
         paint = new Paint();
         paint.setAntiAlias(true);
+
+        // Estrelas fixas: não mudam de posição a cada quadro.
+        Random starRandom = new Random(2026);
+        for (int i = 0; i < starX.length; i++) {
+            starX[i] = starRandom.nextFloat();
+            starY[i] = starRandom.nextFloat();
+            starSize[i] = 0.8f + starRandom.nextFloat() * 2.2f;
+        }
 
         AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_GAME)
@@ -233,6 +251,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             if (distance < targetRadius + bulletRadius) {
                 bulletActive = false;
                 score++;
+                pointPopupStart = System.currentTimeMillis();
                 startTime += 5000; // Bônus de +5 segundos
 
                 for (int i = 0; i < 20; i++) particles.add(new Particle(targetX, targetY));
@@ -259,12 +278,56 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     // ==================================================
+    // FUNDO ESPACIAL (APENAS VISUAL)
+    // ==================================================
+    private void drawSpaceBackground(Canvas canvas) {
+        float w = canvas.getWidth();
+        float h = canvas.getHeight();
+        if (w <= 0 || h <= 0) return;
+
+        backgroundPaint.setShader(new LinearGradient(0, 0, 0, h,
+                Color.rgb(5, 8, 31), Color.rgb(37, 16, 76), Shader.TileMode.CLAMP));
+        canvas.drawRect(0, 0, w, h, backgroundPaint);
+        backgroundPaint.setShader(null);
+
+        // Nebulosas suaves no espaço.
+        backgroundPaint.setColor(Color.argb(30, 115, 75, 200));
+        canvas.drawOval(-w * 0.25f, h * 0.10f, w * 0.70f, h * 0.80f, backgroundPaint);
+        backgroundPaint.setColor(Color.argb(23, 35, 135, 210));
+        canvas.drawOval(w * 0.40f, -h * 0.30f, w * 1.18f, h * 0.45f, backgroundPaint);
+
+        // Estrelas distribuídas proporcionalmente à tela.
+        for (int i = 0; i < starX.length; i++) {
+            int alpha = 130 + (i % 5) * 25;
+            backgroundPaint.setColor(Color.argb(alpha, 235, 241, 255));
+            canvas.drawCircle(starX[i] * w, starY[i] * h, starSize[i], backgroundPaint);
+        }
+
+        // Planeta distante à direita.
+        float px = w * 0.83f;
+        float py = h * 0.28f;
+        float radius = Math.min(w, h) * 0.12f;
+        backgroundPaint.setColor(Color.rgb(68, 89, 176));
+        canvas.drawCircle(px, py, radius, backgroundPaint);
+        backgroundPaint.setColor(Color.argb(120, 154, 179, 242));
+        canvas.drawCircle(px - radius * 0.22f, py - radius * 0.23f,
+                radius * 0.62f, backgroundPaint);
+
+        // Pequena lua na parte esquerda.
+        float moonRadius = Math.min(w, h) * 0.043f;
+        backgroundPaint.setColor(Color.rgb(162, 181, 204));
+        canvas.drawCircle(w * 0.14f, h * 0.22f, moonRadius, backgroundPaint);
+        backgroundPaint.setColor(Color.argb(90, 75, 91, 128));
+        canvas.drawCircle(w * 0.13f, h * 0.21f, moonRadius * 0.23f, backgroundPaint);
+    }
+
+    // ==================================================
     // DESENHO
     // ==================================================
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawColor(Color.rgb(25, 35, 50)); // Fundo
+        drawSpaceBackground(canvas); // Fundo espacial
 
         float centerX = getWidth() / 2f;
         float centerY = getHeight() / 2f;
@@ -375,6 +438,57 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             paint.setColor(Color.YELLOW);
             canvas.drawCircle(bulletX, bulletY, bulletRadius, paint);
         }
+
+        // Pontos em destaque no centro, com aumento suave e desaparecimento
+        long elapsed = System.currentTimeMillis() - pointPopupStart;
+        if (pointPopupStart > 0 && elapsed >= 0 && elapsed < POINT_POPUP_DURATION) {
+            float progress = (float) elapsed / POINT_POPUP_DURATION;
+            float scale = 0.85f + 0.25f * Math.min(progress * 4f, 1f);
+            int alpha = progress < 0.65f ? 255 :
+                    (int) (255f * (1f - progress) / 0.35f);
+
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setFakeBoldText(true);
+            paint.setTextSize(100f * scale);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(7f);
+            paint.setColor(Color.BLACK);
+            paint.setAlpha(alpha);
+            canvas.drawText("+1 PONTO!", centerX, centerY, paint);
+
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.YELLOW);
+            paint.setAlpha(alpha);
+            canvas.drawText("+1 PONTO!", centerX, centerY, paint);
+            paint.setAlpha(255);
+            paint.setFakeBoldText(false);
+            paint.setTextAlign(Paint.Align.LEFT);
+        }
+
+        // Contagem regressiva nos ultimos 10 segundos da partida.
+        if (timeLeft > 0 && timeLeft <= 10000L) {
+            int secondsRemaining = (int) ((timeLeft + 999L) / 1000L);
+            float secondProgress = (timeLeft % 1000L) / 1000f;
+            float pulse = 1f + 0.10f * (float) Math.sin(secondProgress * Math.PI * 2);
+            float countdownY = centerY;
+            // Se o jogador acertar o alvo, os dois avisos ficam visiveis.
+            if (pointPopupStart > 0 && elapsed >= 0 && elapsed < POINT_POPUP_DURATION) {
+                countdownY = centerY - Math.min(getHeight() * 0.23f, 170f);
+            }
+
+            paint.setTextAlign(Paint.Align.CENTER);
+            paint.setFakeBoldText(true);
+            paint.setTextSize(Math.min(getWidth() * 0.20f, 160f) * pulse);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(9f);
+            paint.setColor(Color.BLACK);
+            canvas.drawText(String.valueOf(secondsRemaining), centerX, countdownY, paint);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.rgb(255, 65, 65));
+            canvas.drawText(String.valueOf(secondsRemaining), centerX, countdownY, paint);
+            paint.setFakeBoldText(false);
+            paint.setTextAlign(Paint.Align.LEFT);
+        }
     }
 
     // ==================================================
@@ -392,6 +506,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback {
             targetSpeedX = 4f;
             targetBaseY = 250;
             score = 0;
+            pointPopupStart = 0L;
             targetRadius = 50;
             blockerSpeed = 5;
             particles.clear();
