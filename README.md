@@ -1,201 +1,179 @@
 # 🎯 Cannon Game
 
-Projeto desenvolvido para a disciplina de *Programação III, baseado no **Capítulo 6 – Cannon Game App* do livro Android 6 for Programmers: An App-Driven Approach (3rd Edition).
+## Sobre o projeto
+
+Este projeto foi desenvolvido por nós para a disciplina de **Programação III**, com base no Capítulo 6 do livro *Android 6 for Programmers: An App-Driven Approach (3rd Edition)*.
+
+A ideia foi criar um jogo para Android em que o jogador controla um canhão e precisa acertar um alvo que fica se movimentando pela tela.
+
+Durante o desenvolvimento, trabalhamos com Java, Canvas, SurfaceView, threads, detecção de colisões, controles por toque e efeitos sonoros. Também fomos acrescentando algumas melhorias para deixar o jogo mais interessante.
 
 ## 👥 Integrantes
 
 - Gabriel Henrique
 - Isaac Sousa
 
-## 📱 Sobre o projeto
+## 📱 Funcionalidades do jogo
 
-O *Cannon Game* é um jogo desenvolvido para Android no qual o jogador utiliza um canhão para disparar projéteis em direção a um alvo dinâmico.
+O Cannon Game conta com as seguintes funcionalidades:
 
-O projeto tem como objetivo aplicar conceitos de programação mobile Android, incluindo gráficos com Canvas e Paint, SurfaceView, SurfaceHolder, threads, game loop, eventos de toque, mecânicas de física/colisões e reprodução de efeitos sonoros.
+- Menu inicial com o nome do jogo e o recorde do jogador;
+- Canhão que acompanha a direção do dedo na tela;
+- Disparo de projéteis ao soltar o dedo;
+- Alvo que se movimenta de um lado para o outro;
+- Obstáculo móvel que pode bloquear os tiros;
+- Sistema de colisão entre o projétil, o alvo e o obstáculo;
+- Pontuação de 1 ponto por alvo acertado;
+- Bônus de 5 segundos a cada acerto;
+- Aumento da dificuldade conforme o jogador faz pontos;
+- Efeitos de partículas quando o alvo é atingido;
+- Sons para disparos, acertos no alvo e colisões com o obstáculo;
+- Recorde salvo no celular;
+- Tela de Game Over com opção de jogar novamente;
+- Fundo espacial com estrelas e planetas;
+- Animação de pontos ao acertar o alvo;
+- Contagem regressiva em destaque nos últimos 10 segundos.
 
----
+## 🌌 Fundo espacial
 
-## ✅ Funcionalidades implementadas
+Uma das melhorias que fizemos foi colocar um fundo espacial no jogo.
 
-Até o momento, o projeto possui:
+O cenário tem estrelas, planetas e cores mais escuras, combinando com a proposta do Cannon Game.
 
-- Estrutura do projeto Android criada no Android Studio;
-- Desenvolvimento utilizando Java;
-- **Tela de Menu Principal** com exibição interativa do título e do recorde atual;
-- **Persistência de recordes (`SharedPreferences`)** para guardar a pontuação máxima (`High Score`) entre sessões;
-- GameView personalizado com SurfaceView e SurfaceHolder;
-- Game Loop utilizando Thread (atualização a aproximadamente 60 FPS);
-- Desenho de formas geométricas e elementos utilizando Canvas e Paint;
-- **Canhão articulado e rotativo** desenhado por camadas no Canvas com acompanhamento dinâmico do ângulo de mira;
-- *Controle de mira por toque/swipe* com exibição de linha de trajetória;
-- Movimento contínuo do projétil após o disparo (saindo precisamente da ponta do cano);
-- *Alvo móvel com movimentação senoidal* (zigue-zague contínuo);
-- Detecção matemática de colisão entre projétil e alvo;
-- Reposicionamento automático do alvo após um acerto;
-- **Sistema de partículas aprimorado** com física de atrito, dispersão ampla e tempo de vida otimizado para explosões dinâmicas;
-- Obstáculo (blocker) com movimentação horizontal independente;
-- Detecção de colisão entre projétil e blocker;
-- *Dificuldade progressiva:* a cada acerto, o blocker fica mais rápido e o alvo diminui de tamanho;
-- **Sistema de tempo bônus:** cada acerto no alvo recompensa o jogador com segundos extras na partida;
-- Sistema de pontuação exibido no HUD;
-- *Cronômetro de partida:* contagem regressiva inicial de 60 segundos;
-- *Tela de Game Over* com verificação de novo recorde, animação de destaque e bloqueio de ações;
-- Reinício completo da partida através de um toque na tela;
-- Execução de efeitos sonoros assíncronos utilizando SoundPool.
+O fundo foi feito utilizando o próprio Canvas, sem precisar adicionar imagens externas. Ele aparece no menu inicial, durante a partida e na tela de Game Over.
 
----
+## ⭐ Sistema de pontuação
+
+O jogador começa com zero pontos.
+
+Cada vez que acerta o alvo, recebe:
+
+- **+1 ponto**
+- **+5 segundos no cronômetro**
+
+Também adicionamos uma animação que mostra a mensagem **+1 PONTO!** no meio da tela por alguns instantes.
+
+A pontuação total continua aparecendo na parte superior da tela.
+
+Conforme o jogador vai acertando os alvos, a dificuldade aumenta. O alvo fica menor e mais rápido, e o obstáculo também aumenta sua velocidade.
+
+## ⏱️ Cronômetro e contagem regressiva
+
+Cada partida começa com **60 segundos**.
+
+O tempo restante aparece na parte superior da tela e vai diminuindo durante o jogo.
+
+Quando faltam 10 segundos para acabar, aparece uma contagem regressiva grande no centro da tela, mostrando os números de 10 até 1.
+
+Os números aparecem em vermelho e possuem uma pequena animação para chamar a atenção do jogador.
+
+Se o jogador acertar um alvo e ganhar mais tempo, a contagem se ajusta automaticamente.
+
+Quando o tempo chega a zero, a partida termina.
 
 ## 🔊 Efeitos sonoros
 
-Atualmente existem três efeitos sonoros funcionando no jogo:
+Adicionamos três sons ao jogo para deixar as ações mais interessantes.
 
-### Disparo do canhão
-Arquivo: cannon_fire.wav
-É reproduzido sempre que o jogador solta o dedo da tela, realizando um disparo.
+**Disparo do canhão:** `cannon_fire.wav`
 
-### Acerto no alvo
-Arquivo: target_hit.wav
-É reproduzido quando o projétil atinge o alvo, acompanhado da explosão de partículas.
+Esse som é reproduzido quando o jogador dispara um projétil.
 
-### Acerto no blocker
-Arquivo: blocker_hit.wav
-É reproduzido quando o projétil atinge o obstáculo móvel.
+**Acerto no alvo:** `target_hit.wav`
 
----
+É reproduzido quando o jogador acerta o alvo e ganha um ponto.
+
+**Acerto no obstáculo:** `blocker_hit.wav`
+
+É reproduzido quando o projétil bate no obstáculo.
+
+Os sons foram implementados utilizando SoundPool.
 
 ## 🎮 Como jogar
 
-1. Inicie o aplicativo.
-2. O jogador começa com *0 pontos* e *60 segundos*.
-3. *Toque na tela, arraste o dedo para mirar* (uma linha guia cinza aparecerá indicando a direção) e *solte para disparar*.
-4. O projétil seguirá na direção definida pela mira.
-5. Acerte o alvo (que flutua em zigue-zague) para ganhar pontos.
-6. A cada acerto, o jogo fica mais difícil: o alvo diminui de tamanho, fica mais rápido e o blocker acelera.
-7. Evite atingir o blocker laranja. Se o projétil bater nele, o disparo é destruído.
-8. Continue tentando marcar a maior pontuação possível até o tempo terminar.
+1. Abra o aplicativo e toque na tela inicial para começar.
+2. O jogo começa com 60 segundos e zero pontos.
+3. Toque na tela e arraste o dedo para escolher a direção do canhão.
+4. Solte o dedo para disparar.
+5. Tente acertar o alvo vermelho que fica se movimentando.
+6. Evite o obstáculo laranja, pois ele bloqueia os disparos.
+7. Cada acerto vale um ponto e acrescenta cinco segundos.
+8. Tente conseguir a maior pontuação antes que o tempo termine.
 
----
+## 🏁 Game Over e recorde
 
-## ⏱️ Cronômetro
+Quando o tempo acaba, aparece a tela de **Game Over**, mostrando a pontuação final.
 
-Cada partida possui duração de:
-60 segundos
+O jogo também verifica se o jogador conseguiu superar seu recorde anterior.
 
-Durante a partida, o tempo restante é atualizado em tempo real no canto superior direito da tela.
-Quando o cronômetro chega a zero, a partida é imediatamente encerrada.
+Quando isso acontece, aparece a mensagem **NOVO RECORDE!** com uma animação.
 
----
+Utilizamos SharedPreferences para salvar o recorde no próprio celular. Assim, mesmo fechando e abrindo o aplicativo novamente, a maior pontuação continua registrada.
 
-## 🏁 Game Over
-
-Quando o tempo chega a zero:
-
-- O jogo é interrompido (alvo, partículas e disparos param);
-- Novos disparos são bloqueados;
-- A tela exibe a mensagem *GAME OVER* e a pontuação final;
-- Se a pontuação superar o recorde anterior, um destaque animado de **NOVO RECORDE!** é exibido.
-
-Exemplo:
-
-GAME OVER
-Pontuação final: 12
-NOVO RECORDE!
-Toque para jogar novamente
-
-Ao tocar na tela, todo o estado do jogo é resetado: a pontuação volta para zero, o tamanho e a velocidade do alvo e do blocker voltam ao padrão inicial e o cronômetro retorna para 60 segundos.
-
----
-
-## 🟧 Blocker
-
-O jogo possui um obstáculo móvel chamado *Blocker*.
-Ele movimenta-se horizontalmente pela tela de forma contínua e independente, mudando automaticamente de direção ao bater nas bordas.
-
-Quando um projétil atinge o blocker:
-- O projétil é destruído;
-- O jogador não pontua;
-- O efeito blocker_hit.wav é reproduzido.
-
----
-
-## 🏆 Sistema de pontuação
-
-O jogador começa cada partida com:
-Pontos: 0
-
-Cada alvo atingido adiciona:
-+1 ponto 
-+5 segundos (bônus)
-
-A pontuação é exibida durante toda a partida e também na tela de Game Over e no menu inicial.
-
----
+Para iniciar outra partida, basta tocar na tela.
 
 ## 🛠️ Tecnologias utilizadas
 
-- Android Studio
-- Java / Android SDK
-- Canvas e Paint (Renderização customizada)
-- SurfaceView e SurfaceHolder
-- Threads (Game Loop)
-- SoundPool (Áudio de baixa latência)
-- MotionEvent (Captura de gestos e swipe)
-- Git / GitHub
+Durante o desenvolvimento utilizamos:
 
----
+- Android Studio;
+- Java;
+- Android SDK;
+- Canvas e Paint para desenhar os elementos;
+- SurfaceView e SurfaceHolder;
+- Thread para controlar o funcionamento do jogo;
+- MotionEvent para os controles por toque;
+- SoundPool para os efeitos sonoros;
+- SharedPreferences para salvar o recorde;
+- Git e GitHub para organizar o código e registrar as alterações.
 
-## ▶️ Como executar
+## ▶️ Como executar o projeto
 
-Clone o repositório:
+Primeiro, clone o repositório:
+
+```bash
 git clone https://github.com/gfraga126-gif/CannonGame.git
+```
 
 Depois:
 
-1. Abra o projeto no Android Studio;
-2. Aguarde a sincronização do Gradle;
-3. Selecione um dispositivo Android ou emulador;
-4. Compile o projeto;
-5. Execute utilizando *Run App*.
+1. Abra a pasta do projeto no Android Studio.
+2. Aguarde o Gradle terminar de sincronizar.
+3. Escolha um emulador ou celular Android.
+4. Clique em **Run** para executar o aplicativo.
 
-O projeto foi testado utilizando um emulador *Pixel 6a*.
+Durante o desenvolvimento, utilizamos o emulador Pixel 6a para realizar os testes.
 
----
+## 📂 Organização do projeto
 
-## 📂 Principais arquivos
+**MainActivity.java**
 
-MainActivity.java
-Responsável pela Activity principal e pela inicialização do GameView.
+É responsável por iniciar o aplicativo e carregar a tela do jogo.
 
-GameView.java
-A classe core da aplicação. Contém toda a lógica estrutural, incluindo:
-- Game Loop e instâncias de Thread;
-- Renderização via Canvas;
-- Matemática de movimentação senoidal e física de trajetórias;
-- Classe auxiliar Particle para efeitos visuais;
-- Detecção de colisões (Bounding boxes e raio de interseção);
-- Gestão de estados (Partida e Game Over).
+**GameView.java**
 
-res/raw/
-Contém os efeitos sonoros utilizados pelo jogo.
+É o arquivo principal do jogo. Nele estão o desenho dos elementos, a movimentação do canhão, o funcionamento dos tiros, as colisões, a pontuação, o cronômetro e as animações.
 
----
+**res/raw/**
 
-## 🚧 Status do projeto
+Essa pasta contém os três arquivos de áudio utilizados no jogo.
 
-*Na reta final de desenvolvimento.*
-A base e as mecânicas avançadas do Cannon Game já estão totalmente implementadas.
+**README.md**
 
-### Próximas etapas
+Contém as informações sobre o projeto, as funcionalidades e as instruções para executar o aplicativo.
 
-- Adicionar transição de cores dinâmica ao cenário (Tema Dia/Noite com base no tempo);
-- Revisar o modo imersivo/tela cheia e os estados do ciclo de vida (pausa e retomada);
-- Realizar os testes finais de estabilidade;
-- Adicionar screenshot ou GIF do jogo rodando ao README;
-- Revisão final do código para a entrega da disciplina.
+## 🚧 Situação atual do projeto
 
----
+Conseguimos implementar as principais funcionalidades do Cannon Game e também acrescentamos algumas melhorias além da versão inicial.
+
+Entre elas estão o fundo espacial, os efeitos sonoros, o sistema de recorde, as partículas, a animação de pontos e a contagem regressiva.
+
+Também realizamos testes no emulador para verificar o funcionamento do jogo.
+
+Antes da entrega, vamos conferir se todos os arquivos estão atualizados no GitHub e fazer uma última revisão do projeto.
 
 ## 📚 Disciplina
 
-*Programação III*
-Projeto acadêmico desenvolvido com o objetivo de aplicar conceitos avançados de desenvolvimento de jogos 2D e programação mobile para Android.
+**Programação III**
+
+O desenvolvimento deste trabalho ajudou a colocar em prática os conteúdos estudados sobre programação Android, gráficos 2D, eventos de toque, threads e organização de projetos utilizando Git e GitHub.
